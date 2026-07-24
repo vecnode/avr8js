@@ -68,7 +68,7 @@ export const atmega328Channels: ADCMuxConfiguration = {
   15: { type: ADCMuxInputType.Constant, voltage: 0 },
 };
 
-const fallbackMuxInput = {
+const fallbackMuxInput: ADCMuxInput = {
   type: ADCMuxInputType.Constant,
   voltage: 0,
 };
