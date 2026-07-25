@@ -186,6 +186,24 @@ export const portLConfig: AVRPortConfig = {
   externalInterrupts: [],
 };
 
+// ATtiny25/45/85's only port - a genuinely different register layout
+// from the ATmega family's portBConfig above (0x23/0x24/0x25), since
+// ATtiny85 has no extended I/O space at all. Real addresses per the
+// ATtiny25/45/85 datasheet (PINB/DDRB/PORTB at I/O 0x16/0x17/0x18, +
+// 0x20 for the data-memory-mapped address this fork's CPU uses
+// everywhere) - cross-checked against this file's own sibling,
+// timer-attiny.ts's attinyTimer1Config.compPortB, already 0x38 (the
+// same PORTB address derived here independently). No pin-change/
+// external-interrupt wiring yet - not needed for digital I/O to work
+// correctly, and a real, narrower gap than not having this port at
+// all.
+export const attinyPortBConfig: AVRPortConfig = {
+  PIN: 0x36,
+  DDR: 0x37,
+  PORT: 0x38,
+  externalInterrupts: [],
+};
+
 export enum PinState {
   Low,
   High,
