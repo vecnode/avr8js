@@ -36,6 +36,7 @@ export {
   portJConfig,
   portKConfig,
   portLConfig,
+  attinyPortBConfig,
 } from './peripherals/gpio';
 export type {
   AVRExternalInterrupt,
