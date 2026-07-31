@@ -255,7 +255,8 @@ export function avrInstruction(cpu: CPU) {
     cpu.data[(opcode & 0x1f0) >> 4] = cpu.progBytes[(rampz << 16) | i];
     cpu.dataView.setUint16(30, i + 1, true);
     if (i === 0xffff) {
-      cpu.data[0x5b] = (rampz + 1) % (cpu.progBytes.length >> 16);
+      const rampzPages = cpu.progBytes.length >> 16;
+      cpu.data[0x5b] = rampzPages > 0 ? (rampz + 1) % rampzPages : 0;
     }
     cpu.cycles += 2;
   } else if ((opcode & 0xfc00) === 0x2400) {
@@ -546,9 +547,9 @@ export function avrInstruction(cpu: CPU) {
     const { pc22Bits } = cpu;
     const i = cpu.dataView.getUint16(93, true) + (pc22Bits ? 3 : 2);
     cpu.dataView.setUint16(93, i, true);
-    cpu.pc = (cpu.data[i - 1] << 8) + cpu.data[i] - 1;
+    cpu.pc = ((cpu.data[i - 1] ?? 0) << 8) + (cpu.data[i] ?? 0) - 1;
     if (pc22Bits) {
-      cpu.pc |= cpu.data[i - 2] << 16;
+      cpu.pc |= (cpu.data[i - 2] ?? 0) << 16;
     }
     cpu.cycles += pc22Bits ? 4 : 3;
   } else if (opcode === 0x9518) {
@@ -556,9 +557,9 @@ export function avrInstruction(cpu: CPU) {
     const { pc22Bits } = cpu;
     const i = cpu.dataView.getUint16(93, true) + (pc22Bits ? 3 : 2);
     cpu.dataView.setUint16(93, i, true);
-    cpu.pc = (cpu.data[i - 1] << 8) + cpu.data[i] - 1;
+    cpu.pc = ((cpu.data[i - 1] ?? 0) << 8) + (cpu.data[i] ?? 0) - 1;
     if (pc22Bits) {
-      cpu.pc |= cpu.data[i - 2] << 16;
+      cpu.pc |= (cpu.data[i - 2] ?? 0) << 16;
     }
     cpu.cycles += pc22Bits ? 4 : 3;
     cpu.data[95] |= 0x80; // Enable interrupts
