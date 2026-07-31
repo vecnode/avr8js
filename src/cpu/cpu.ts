@@ -12,7 +12,24 @@ import { AVRIOPort } from '../peripherals/gpio';
 import { i16, u16, u32, u8 } from '../types';
 import { avrInterrupt } from './interrupt';
 
-const registerSpace = 0x100;
+// Default size of the fixed register + I/O + extended-I/O window at the
+// bottom of the address space, before general-purpose SRAM starts - correct
+// for atmega328p-class chips (RAMSTART=0x100, per <avr/iom328p.h>), but not
+// for "big" AVR chips like atmega2560, which have twice as much extended
+// I/O (RAMSTART=0x200, per <avr/iom2560.h> - the many extra ports/timers/
+// USARTs need the room) and were overflowing this fixed assumption: with
+// the default `sramBytes` (8192, deliberately sized to match atmega2560's
+// own 8KB of *SRAM*) plus this hardcoded 0x100, `data.length` came out 256
+// bytes short of atmega2560's real RAMEND+1 (0x2200), so the real compiled
+// startup code's own SP init (a literal RAMEND embedded in its linker
+// script, not anything this class computes) pointed 256 bytes past the end
+// of `data` - every PUSH/CALL there silently landed out of bounds (a
+// Uint8Array write is a silent no-op, a read comes back as 0), corrupting
+// the stack from the very first few instructions and never reaching
+// user code. Now a constructor parameter (default unchanged, so every
+// existing caller/chip keeps its current behavior) so a caller can pass
+// the correct value for a chip whose real register window isn't 0x100.
+const DEFAULT_REGISTER_SPACE = 0x100;
 const MAX_INTERRUPTS = 128; // Enough for ATMega2560
 
 export type CPUMemoryHook = (value: u8, oldValue: u8, addr: u16, mask: u8) => boolean | void;
@@ -44,7 +61,7 @@ interface AVRClockEventEntry {
 }
 
 export class CPU {
-  readonly data: Uint8Array = new Uint8Array(this.sramBytes + registerSpace);
+  readonly data: Uint8Array = new Uint8Array(this.sramBytes + this.registerSpace);
   readonly data16 = new Uint16Array(this.data.buffer);
   readonly dataView = new DataView(this.data.buffer);
   readonly progBytes = new Uint8Array(this.progMem.buffer);
@@ -86,6 +103,7 @@ export class CPU {
   constructor(
     public progMem: Uint16Array,
     private sramBytes = 8192,
+    private registerSpace = DEFAULT_REGISTER_SPACE,
   ) {
     this.reset();
   }
