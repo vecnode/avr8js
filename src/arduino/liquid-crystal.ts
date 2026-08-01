@@ -116,7 +116,9 @@ export class LiquidCrystal {
     this.command(LCD_SETDDRAMADDR | (col + this.rowOffsets[clampedRow]));
   }
 
-  print(text: string): void {
+  /** Matches real Arduino's Print::print() overloads - accepts a number/boolean/etc, not just a string. */
+  print(value: unknown): void {
+    const text = String(value);
     for (let i = 0; i < text.length; i++) {
       this.write(text.charCodeAt(i));
     }

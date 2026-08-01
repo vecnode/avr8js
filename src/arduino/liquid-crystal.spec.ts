@@ -83,6 +83,20 @@ describe('LiquidCrystal', () => {
     expect(decoder.bytes.every((b) => b.rs === 1)).toBe(true);
   });
 
+  it('print() accepts a number, matching real Arduino Print::print() overloads', () => {
+    const runtime = new ArduinoRuntime({ timeScale: 1_000_000 });
+    const decoder = new MiniHd44780Decoder();
+    attachDecoder(runtime, decoder);
+
+    const lcd = new LiquidCrystal(runtime, RS, E, D4, D5, D6, D7);
+    lcd.begin(16, 2);
+    decoder.bytes.length = 0;
+
+    lcd.print(42);
+
+    expect(decoder.bytes.map((b) => b.byte)).toEqual(['4'.charCodeAt(0), '2'.charCodeAt(0)]);
+  });
+
   it('setCursor() decodes to a SETDDRAMADDR command, RS=0', () => {
     const runtime = new ArduinoRuntime({ timeScale: 1_000_000 });
     const decoder = new MiniHd44780Decoder();
