@@ -16,27 +16,53 @@ export type PinMode = 'input' | 'output' | 'input_pullup';
 export type PinChangeListener = (value: number) => void;
 export type SerialByteListener = (byte: number) => void;
 
-const DIGITAL_PIN_COUNT = 14; // D0-D13
-const ANALOG_PIN_COUNT = 6; // A0-A5
+const DIGITAL_PIN_COUNT = 14; // D0-D13 (Uno/Nano/Leonardo's shape - the default)
+const ANALOG_PIN_COUNT = 6; // A0-A5 (Uno/Nano/Leonardo's shape - the default)
 
 /**
- * Arduino Uno-style pin numbering: 0-13 are the digital pins, 14-19 are
- * A0-A5 (matching real Arduino core's own `#define A0 14` etc.) - the de
- * facto standard numbering every AVR Arduino board's core uses, not a
- * physicalsim-specific scheme. `pinName()` below turns a numeric pin back
- * into the "D0".."D13"/"A0".."A5" strings a board's own BoardPinMap is
- * keyed by, so a host adapter can resolve a real board pin without this
- * class knowing anything about board-specific pin ids.
+ * Arduino-style pin numbering: 0..(digitalCount-1) are the digital pins,
+ * the next `analogCount` are A0..A(analogCount-1) (matching real Arduino
+ * cores' own `#define A0 14` etc.) - the de facto standard numbering
+ * every AVR Arduino board's core uses, not a physicalsim-specific
+ * scheme. Defaults to the Uno/Nano/Leonardo shape (14 digital + 6
+ * analog); a Mega-shaped board passes 54/16 (D0-D53, A0-A15).
+ * `pinName()` turns a numeric pin back into the "D0".."D13"/"A0".."A5"
+ * strings a board's own BoardPinMap is keyed by, so a host adapter can
+ * resolve a real board pin without this class knowing anything about
+ * board-specific pin ids; `parsePinName()` is its exact inverse.
  */
-export function pinName(pin: number): string {
-  if (pin < DIGITAL_PIN_COUNT) {
+export function pinName(
+  pin: number,
+  digitalCount = DIGITAL_PIN_COUNT,
+  analogCount = ANALOG_PIN_COUNT,
+): string {
+  if (pin < digitalCount) {
     return `D${pin}`;
   }
-  const analogIndex = pin - DIGITAL_PIN_COUNT;
-  if (analogIndex >= 0 && analogIndex < ANALOG_PIN_COUNT) {
+  const analogIndex = pin - digitalCount;
+  if (analogIndex >= 0 && analogIndex < analogCount) {
     return `A${analogIndex}`;
   }
   throw new RangeError(`ArduinoRuntime: pin ${pin} is out of range`);
+}
+
+export function parsePinName(
+  name: string,
+  digitalCount = DIGITAL_PIN_COUNT,
+  analogCount = ANALOG_PIN_COUNT,
+): number {
+  const letter = name.charAt(0).toUpperCase();
+  const index = Number(name.slice(1));
+  if (!Number.isInteger(index) || index < 0) {
+    throw new Error(`ArduinoRuntime: invalid pin id "${name}"`);
+  }
+  if (letter === 'D' && index < digitalCount) {
+    return index;
+  }
+  if (letter === 'A' && index < analogCount) {
+    return digitalCount + index;
+  }
+  throw new Error(`ArduinoRuntime: invalid pin id "${name}"`);
 }
 
 export interface ArduinoRuntimeOptions {
