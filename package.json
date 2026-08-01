@@ -25,7 +25,7 @@
     "build:demo": "vite build demo",
     "prepare": "husky && npm run build",
     "start": "vite demo",
-    "lint": "eslint src/ demo/",
+    "lint": "eslint src/",
     "test": "npm run lint && vitest run",
     "test:watch": "vitest",
     "benchmark:prepare": "tsx benchmark/convert-instructions.ts",
