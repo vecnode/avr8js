@@ -2,7 +2,7 @@
 // Copyright (c) vecnode
 
 export { LiquidCrystal } from './liquid-crystal';
-export { ArduinoRuntime, ArduinoRuntimeStoppedError, pinName } from './runtime';
+export { ArduinoRuntime, ArduinoRuntimeStoppedError, parsePinName, pinName } from './runtime';
 export type {
   ArduinoRuntimeOptions,
   PinChangeListener,
@@ -10,12 +10,6 @@ export type {
   SerialByteListener,
 } from './runtime';
 export {
-  A0,
-  A1,
-  A2,
-  A3,
-  A4,
-  A5,
   HIGH,
   INPUT,
   INPUT_PULLUP,
@@ -26,4 +20,9 @@ export {
   compileSketch,
   createSketchGlobals,
 } from './sketch-globals';
-export type { CompiledSketch, SketchGlobals } from './sketch-globals';
+export type {
+  CompiledSketch,
+  SketchGlobals,
+  SketchGlobalsOptions,
+  SketchLiquidCrystal,
+} from './sketch-globals';

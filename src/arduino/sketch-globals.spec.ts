@@ -65,4 +65,45 @@ describe('compileSketch', () => {
     sketch.setup();
     expect(() => sketch.loop()).not.toThrow();
   });
+
+  it('defaults A0..A5 to pins 14-19 (Uno/Nano/Leonardo shape)', () => {
+    const runtime = new ArduinoRuntime();
+    const globals = createSketchGlobals(runtime);
+    expect(globals.A0).toBe(14);
+    expect(globals.A5).toBe(19);
+    expect(globals.A6).toBeUndefined();
+  });
+
+  it('generates A0..A15 at pins 54-69 for a Mega-shaped options object', () => {
+    const runtime = new ArduinoRuntime({ pinCount: 70 });
+    const globals = createSketchGlobals(runtime, { digitalPinCount: 54, analogPinCount: 16 });
+    expect(globals.A0).toBe(54);
+    expect(globals.A15).toBe(69);
+  });
+
+  it("a sketch's `new LiquidCrystal(...)` constructs a real LiquidCrystal bound to the runtime", () => {
+    const runtime = new ArduinoRuntime({ timeScale: 1_000_000 });
+    const globals = createSketchGlobals(runtime);
+    const enableChanges: number[] = [];
+    runtime.onPinChange(11, (v) => enableChanges.push(v)); // the `enable` pin, 2nd LiquidCrystal ctor arg
+
+    const sketch = compileSketch(
+      `
+      let lcd;
+      function setup() {
+        lcd = new LiquidCrystal(12, 11, 5, 4, 3, 2);
+        lcd.begin(16, 2);
+      }
+      function loop() {}
+      `,
+      globals,
+    );
+    sketch.setup();
+
+    // begin() genuinely pulses the enable pin as part of its real
+    // write4bits()/pulseEnable() init sequence (see LiquidCrystal.ts) -
+    // confirms the sketch's LiquidCrystal is the real class, not a stub,
+    // and is wired to this runtime's pins.
+    expect(enableChanges.length).toBeGreaterThan(0);
+  });
 });

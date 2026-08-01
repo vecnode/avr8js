@@ -2,7 +2,7 @@
 // Copyright (c) vecnode
 
 import { describe, expect, it, vi } from 'vitest';
-import { ArduinoRuntime, ArduinoRuntimeStoppedError, pinName } from './runtime';
+import { ArduinoRuntime, ArduinoRuntimeStoppedError, parsePinName, pinName } from './runtime';
 
 describe('pinName', () => {
   it('maps digital pins 0-13 to D0..D13', () => {
@@ -17,6 +17,34 @@ describe('pinName', () => {
 
   it('throws for an out-of-range pin', () => {
     expect(() => pinName(20)).toThrow(RangeError);
+  });
+
+  it('supports a Mega-shaped 54 digital + 16 analog pin layout', () => {
+    expect(pinName(0, 54, 16)).toBe('D0');
+    expect(pinName(53, 54, 16)).toBe('D53');
+    expect(pinName(54, 54, 16)).toBe('A0');
+    expect(pinName(69, 54, 16)).toBe('A15');
+    expect(() => pinName(70, 54, 16)).toThrow(RangeError);
+  });
+});
+
+describe('parsePinName', () => {
+  it('is the exact inverse of pinName for the default (Uno) shape', () => {
+    for (let pin = 0; pin < 20; pin++) {
+      expect(parsePinName(pinName(pin))).toBe(pin);
+    }
+  });
+
+  it('is the exact inverse of pinName for a Mega-shaped layout', () => {
+    for (const pin of [0, 27, 53, 54, 61, 69]) {
+      expect(parsePinName(pinName(pin, 54, 16), 54, 16)).toBe(pin);
+    }
+  });
+
+  it('throws for an invalid pin id', () => {
+    expect(() => parsePinName('Z0')).toThrow();
+    expect(() => parsePinName('D99')).toThrow();
+    expect(() => parsePinName('A99')).toThrow();
   });
 });
 
